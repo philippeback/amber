@@ -1,4 +1,4 @@
-Smalltalk current createPackage: 'Kernel-Announcements' properties: #{}!
+Smalltalk current createPackage: 'Kernel-Announcements'!
 Object subclass: #AnnouncementSubscription
 	instanceVariableNames: 'block announcementClass'
 	package: 'Kernel-Announcements'!
@@ -103,34 +103,48 @@ theClass: aClass
 	theClass := aClass
 ! !
 
-SystemAnnouncement subclass: #ClassAdded
+SystemAnnouncement subclass: #ClassAnnouncement
+	instanceVariableNames: 'theClass'
+	package: 'Kernel-Announcements'!
+
+!ClassAnnouncement methodsFor: 'accessing'!
+
+theClass
+	^ theClass
+!
+
+theClass: aClass
+	theClass := aClass
+! !
+
+ClassAnnouncement subclass: #ClassAdded
 	instanceVariableNames: ''
 	package: 'Kernel-Announcements'!
 !ClassAdded commentStamp!
 I am emitted when a class is added to the system.
 See ClassBuilder >> #addSubclassOf:... methods!
 
-SystemAnnouncement subclass: #ClassCommentChanged
+ClassAnnouncement subclass: #ClassCommentChanged
 	instanceVariableNames: ''
 	package: 'Kernel-Announcements'!
 !ClassCommentChanged commentStamp!
 I am emitted when the comment of a class changes. (Behavior >> #comment)!
 
-SystemAnnouncement subclass: #ClassDefinitionChanged
+ClassAnnouncement subclass: #ClassDefinitionChanged
 	instanceVariableNames: ''
 	package: 'Kernel-Announcements'!
 !ClassDefinitionChanged commentStamp!
 I am emitted when the defintion of a class changes.
 See ClassBuilder >> #class:instanceVariableNames:!
 
-SystemAnnouncement subclass: #ClassRemoved
+ClassAnnouncement subclass: #ClassRemoved
 	instanceVariableNames: ''
 	package: 'Kernel-Announcements'!
 !ClassRemoved commentStamp!
 I am emitted when a class is removed.
 See Smalltalk >> #removeClass:!
 
-SystemAnnouncement subclass: #ClassRenamed
+ClassAnnouncement subclass: #ClassRenamed
 	instanceVariableNames: ''
 	package: 'Kernel-Announcements'!
 !ClassRenamed commentStamp!
@@ -155,7 +169,73 @@ MethodAnnouncement subclass: #MethodAdded
 	instanceVariableNames: ''
 	package: 'Kernel-Announcements'!
 
+MethodAnnouncement subclass: #MethodModified
+	instanceVariableNames: 'oldMethod'
+	package: 'Kernel-Announcements'!
+
+!MethodModified methodsFor: 'accessing'!
+
+oldMethod
+	^ oldMethod
+!
+
+oldMethod: aMethod
+	oldMethod := aMethod
+! !
+
 MethodAnnouncement subclass: #MethodRemoved
+	instanceVariableNames: ''
+	package: 'Kernel-Announcements'!
+
+SystemAnnouncement subclass: #PackageAnnouncement
+	instanceVariableNames: 'package'
+	package: 'Kernel-Announcements'!
+
+!PackageAnnouncement methodsFor: 'accessing'!
+
+package
+	^ package
+!
+
+package: aPackage
+	package := aPackage
+! !
+
+PackageAnnouncement subclass: #PackageAdded
+	instanceVariableNames: ''
+	package: 'Kernel-Announcements'!
+
+PackageAnnouncement subclass: #PackageRemoved
+	instanceVariableNames: ''
+	package: 'Kernel-Announcements'!
+
+SystemAnnouncement subclass: #ProtocolAnnouncement
+	instanceVariableNames: 'theClass protocol'
+	package: 'Kernel-Announcements'!
+
+!ProtocolAnnouncement methodsFor: 'accessing'!
+
+protocol
+	^ protocol
+!
+
+protocol: aString
+	protocol := aString
+!
+
+theClass
+	^ theClass
+!
+
+theClass: aClass
+	theClass := aClass
+! !
+
+ProtocolAnnouncement subclass: #ProtocolAdded
+	instanceVariableNames: ''
+	package: 'Kernel-Announcements'!
+
+ProtocolAnnouncement subclass: #ProtocolRemoved
 	instanceVariableNames: ''
 	package: 'Kernel-Announcements'!
 

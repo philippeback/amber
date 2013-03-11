@@ -75,6 +75,13 @@ function SmalltalkSymbol(string) {
 	this.value = string;
 }
 function SmalltalkOrganizer() {
+}
+
+function SmalltalkPackageOrganizer() {
+    this.elements = [];
+}
+
+function SmalltalkClassOrganizer() {
     this.elements = [];
 }
 
@@ -92,6 +99,8 @@ inherits(SmalltalkNil, SmalltalkObject);
 inherits(SmalltalkMethod, SmalltalkObject);
 inherits(SmalltalkPackage, SmalltalkObject);
 inherits(SmalltalkOrganizer, SmalltalkObject);
+inherits(SmalltalkPackageOrganizer, SmalltalkOrganizer);
+inherits(SmalltalkClassOrganizer, SmalltalkOrganizer);
 
 
 function Smalltalk() {
@@ -184,7 +193,7 @@ function Smalltalk() {
 	function pkg(spec) {
 		var that = new SmalltalkPackage();
 		that.pkgName = spec.pkgName;
-        that.organization = new SmalltalkOrganizer();
+        that.organization = new SmalltalkPackageOrganizer();
 		that.properties = spec.properties || {};
 		return that;
 	}
@@ -233,7 +242,9 @@ function Smalltalk() {
             enumerable:false, configurable: true, writable: false
 		});
 
-		klass.organization = new SmalltalkOrganizer();
+		klass.organization          = new SmalltalkClassOrganizer();
+        klass.organization.theClass = klass;
+
 		Object.defineProperty(klass, "methods", {
 			value: {},
 			enumerable: false, configurable: true, writable: true
@@ -464,7 +475,9 @@ function Smalltalk() {
         delete st[klass.className];
     };
 
-	/* Add/remove a method to/from a class */
+	/* 
+     * Add/remove a method to/from a class 
+     */
 
 	st.addMethod = function(jsSelector, method, klass) {
 		method.jsSelector = jsSelector;
@@ -472,6 +485,8 @@ function Smalltalk() {
 		klass.methods[method.selector] = method;
 		method.methodClass = klass;
 
+        // During the bootstrap, #addCompiledMethod is not used.
+        // Therefore we populate the organizer here too
         klass.organization.elements.addElement(method.category);
 
         for(var i=0; i<method.messageSends.length; i++) {
@@ -490,17 +505,8 @@ function Smalltalk() {
 	    delete klass.methods[method.selector];
 
 		var selectors = Object.keys(klass.methods);
-		var shouldDeleteProtocol = true;
-
-		for(var i = 0, l = selectors.length; i<l; i++) {
-            if(klass.methods[selectors[i]].category === protocol) {
-                shouldDeleteProtocol = false;
-				break;
-            };
-        };
-        if(shouldDeleteProtocol) {
-            klass.organization.elements.removeElement(protocol)
-        };
+        // Do *not* delete protocols from here.
+        // This is handled by #removeCompiledMethod
     };
 
 	/* Handles unhandled errors during message sends */
@@ -813,6 +819,8 @@ smalltalk.wrapClassName("Smalltalk", "Kernel-Objects", Smalltalk, smalltalk.Obje
 smalltalk.wrapClassName("Package", "Kernel-Objects", SmalltalkPackage, smalltalk.Object, false);
 smalltalk.wrapClassName("CompiledMethod", "Kernel-Methods", SmalltalkMethod, smalltalk.Object, false);
 smalltalk.wrapClassName("Organizer", "Kernel-Objects", SmalltalkOrganizer, smalltalk.Object, false);
+smalltalk.wrapClassName("PackageOrganizer", "Kernel-Objects", SmalltalkPackageOrganizer, smalltalk.Organizer, false);
+smalltalk.wrapClassName("ClassOrganizer", "Kernel-Objects", SmalltalkClassOrganizer, smalltalk.Organizer, false);
 
 
 smalltalk.wrapClassName("Number", "Kernel", Number, smalltalk.Object);

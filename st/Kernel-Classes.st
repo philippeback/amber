@@ -1,15 +1,15 @@
-Smalltalk current createPackage: 'Kernel-Classes' properties: #{}!
+Smalltalk current createPackage: 'Kernel-Classes'!
 Object subclass: #Behavior
 	instanceVariableNames: ''
 	package: 'Kernel-Classes'!
 !Behavior commentStamp!
-Behavior is the superclass of all class objects. 
+Behavior is the superclass of all class objects.
 
 It defines the protocol for creating instances of a class with `#basicNew` and `#new` (see `boot.js` for class constructors details).
-Instances know about the subclass/superclass relationships between classes, contain the description that instances are created from, 
+Instances know about the subclass/superclass relationships between classes, contain the description that instances are created from,
 and hold the method dictionary that's associated with each class.
 
-Behavior also  provides methods for compiling methods, examining the method dictionary, and iterating over the class hierarchy.!
+Behavior also provides methods for compiling methods, examining the method dictionary, and iterating over the class hierarchy.!
 
 !Behavior methodsFor: 'accessing'!
 
@@ -17,47 +17,53 @@ allInstanceVariableNames
 	| result |
 	result := self instanceVariableNames copy.
 	self superclass ifNotNil: [
-	    result addAll: self superclass allInstanceVariableNames].
+		result addAll: self superclass allInstanceVariableNames].
 	^result
+!
+
+allSelectors
+	^self allSuperclasses
+		inject: self selectors
+		into: [ :soFar :aBehavior | soFar addAll: aBehavior selectors; yourself ]
 !
 
 allSubclasses
 	| result |
 	result := self subclasses.
 	self subclasses do: [:each |
-	    result addAll: each allSubclasses].
+		result addAll: each allSubclasses].
 	^result
 !
 
 allSuperclasses
 	
-    self superclass ifNil: [ ^ #() ].
-    
-	^ (OrderedCollection with: self superclass) 
-    	addAll: self superclass allSuperclasses;
-        yourself
+	self superclass ifNil: [ ^ #() ].
+	
+	^ (OrderedCollection with: self superclass)
+		addAll: self superclass allSuperclasses;
+		yourself
 !
 
 comment
-    ^(self basicAt: 'comment') ifNil: ['']
+	^(self basicAt: 'comment') ifNil: ['']
 !
 
 comment: aString
-    self basicAt: 'comment' put: aString.
-    SystemAnnouncer current
-    	announce: (ClassCommentChanged new
-        	theClass: self;
-            yourself)
+	self basicAt: 'comment' put: aString.
+	SystemAnnouncer current
+		announce: (ClassCommentChanged new
+			theClass: self;
+			yourself)
 !
 
 commentStamp
-    ^ClassCommentReader new
+	^ClassCommentReader new
 	class: self;
 	yourself
 !
 
 commentStamp: aStamp prior: prior
-        ^self commentStamp
+		^self commentStamp
 !
 
 definition
@@ -73,12 +79,12 @@ lookupSelector: selector
 	Return the corresponding method if found.
 	Otherwise chase the superclass chain and try again.
 	Return nil if no method is found."
-    
+	
 	| lookupClass |
-    
+	
 	lookupClass := self.
 	[ lookupClass = nil ] whileFalse: [
-      	(lookupClass includesSelector: selector)
+		(lookupClass includesSelector: selector)
 				ifTrue: [ ^ lookupClass methodAt: selector ].
 			lookupClass := lookupClass superclass ].
 	^ nil
@@ -105,8 +111,8 @@ methods
 
 methodsFor: aString
 	^ClassCategoryReader new
-	    class: self category: aString;
-	    yourself
+		class: self category: aString;
+		yourself
 !
 
 methodsFor: aString stamp: aStamp
@@ -127,7 +133,7 @@ organization
 !
 
 protocols
-   ^ self organization elements sorted
+	^ self organization elements sorted
 !
 
 protocolsDo: aBlock
@@ -138,7 +144,7 @@ protocolsDo: aBlock
 	methodsByCategory := HashedCollection new.
 	self methodDictionary values do: [:m |
 		(methodsByCategory at: m category ifAbsentPut: [Array new])
- 			add: m]. 
+			add: m].
 	self protocols do: [:category |
 		aBlock value: category value: (methodsByCategory at: category)]
 !
@@ -174,13 +180,31 @@ withAllSubclasses
 !Behavior methodsFor: 'compiling'!
 
 addCompiledMethod: aMethod
+	| oldMethod announcement |
+	
+	oldMethod := self methodDictionary
+		at: aMethod selector
+		ifAbsent: [ nil ].
+	
+	(self protocols includes: aMethod protocol)
+		ifFalse: [ self organization addElement: aMethod protocol ].
+
 	self basicAddCompiledMethod: aMethod.
-    
-    SystemAnnouncer current
-   		announce: (MethodAdded new
-        	theClass: self;
-            method: aMethod;
-            yourself)
+	
+	announcement := oldMethod
+		ifNil: [
+			MethodAdded new
+					method: aMethod;
+					yourself ]
+		ifNotNil: [
+			MethodModified new
+					oldMethod: oldMethod;
+					method: aMethod;
+					yourself ].
+					
+					
+	SystemAnnouncer current
+				announce: announcement
 !
 
 compile: aString
@@ -189,19 +213,22 @@ compile: aString
 
 compile: aString category: anotherString
 	Compiler new
-		install: aString 
-        forClass: self 
-        category: anotherString
+		install: aString
+		forClass: self
+		category: anotherString
 !
 
 removeCompiledMethod: aMethod
 	self basicRemoveCompiledMethod: aMethod.
-    
-    SystemAnnouncer current
-   		announce: (MethodRemoved new
-        	theClass: self;
-            method: aMethod;
-            yourself)
+	
+	self methods
+		detect: [ :each | each protocol = aMethod protocol ]
+		ifNone: [ self organization removeElement: aMethod protocol ].
+	
+	SystemAnnouncer current
+		announce: (MethodRemoved new
+			method: aMethod;
+			yourself)
 ! !
 
 !Behavior methodsFor: 'instance creation'!
@@ -222,9 +249,9 @@ basicAddCompiledMethod: aMethod
 
 basicRemoveCompiledMethod: aMethod
 	<
-    	smalltalk.removeMethod(aMethod)
+		smalltalk.removeMethod(aMethod)
 		smalltalk.init(self);
-    >
+	>
 ! !
 
 !Behavior methodsFor: 'testing'!
@@ -246,7 +273,7 @@ Behavior subclass: #Class
 	instanceVariableNames: ''
 	package: 'Kernel-Classes'!
 !Class commentStamp!
-Class is __the__ class object. 
+Class is __the__ class object.
 
 Instances are the classes of the system.
 Class creation is done throught a `ClassBuilder`!
@@ -259,20 +286,20 @@ category
 
 definition
 	^ String streamContents: [ :stream |
-		stream 
-	    	nextPutAll: self superclass asString;
-	    	nextPutAll: ' subclass: #';
-	    	nextPutAll: self name;
-	    	nextPutAll: String lf, String tab;
-	    	nextPutAll: 'instanceVariableNames: '''.
-		self instanceVariableNames 
-          	do: [ :each | stream nextPutAll: each ] 
-	    	separatedBy: [ stream nextPutAll: ' ' ].
 		stream
-	    	nextPutAll: '''', String lf, String tab;
-	    	nextPutAll: 'package: ''';
-	    	nextPutAll: self category;
-	    	nextPutAll: '''' ]
+			nextPutAll: self superclass asString;
+			nextPutAll: ' subclass: #';
+			nextPutAll: self name;
+			nextPutAll: String lf, String tab;
+			nextPutAll: 'instanceVariableNames: '''.
+		self instanceVariableNames
+			do: [ :each | stream nextPutAll: each ]
+			separatedBy: [ stream nextPutAll: ' ' ].
+		stream
+			nextPutAll: '''', String lf, String tab;
+			nextPutAll: 'package: ''';
+			nextPutAll: self category;
+			nextPutAll: '''' ]
 !
 
 package
@@ -307,7 +334,7 @@ subclass: aString instanceVariableNames: aString2 classVariableNames: classVars 
 
 subclass: aString instanceVariableNames: aString2 package: aString3
 	^ClassBuilder new
-	    superclass: self subclass: aString asString instanceVariableNames: aString2 package: aString3
+		superclass: self subclass: aString asString instanceVariableNames: aString2 package: aString3
 ! !
 
 !Class methodsFor: 'converting'!
@@ -334,20 +361,20 @@ Behavior subclass: #Metaclass
 !Metaclass commentStamp!
 Metaclass is the root of the class hierarchy.
 
-Metaclass instances are metaclasses, one for each real class. 
+Metaclass instances are metaclasses, one for each real class.
 Metaclass instances have a single instance, which they hold onto, which is the class that they are the metaclass of.!
 
 !Metaclass methodsFor: 'accessing'!
 
 definition
 	^ String streamContents: [ :stream |
-		stream 
-	   	 	nextPutAll: self asString;
-	    	nextPutAll: ' class ';
-	    	nextPutAll: 'instanceVariableNames: '''.
+		stream
+			nextPutAll: self asString;
+			nextPutAll: ' class ';
+			nextPutAll: 'instanceVariableNames: '''.
 		self instanceVariableNames
-	    	do: [ :each | stream nextPutAll: each ]
-	    	separatedBy: [ stream nextPutAll: ' ' ].
+			do: [ :each | stream nextPutAll: each ]
+			separatedBy: [ stream nextPutAll: ' ' ].
 		stream nextPutAll: '''' ]
 !
 
@@ -357,7 +384,7 @@ instanceClass
 
 instanceVariableNames: aCollection
 	ClassBuilder new
-	    class: self instanceVariableNames: aCollection
+		class: self instanceVariableNames: aCollection
 !
 
 theMetaClass
@@ -403,33 +430,33 @@ instanceVariableNamesFor: aString
 !ClassBuilder methodsFor: 'class definition'!
 
 addSubclassOf: aClass named: aString instanceVariableNames: aCollection package: packageName
-    | theClass |
-    
-    theClass := Smalltalk current at: aString.
-    
-   	theClass ifNotNil: [ 
-    	theClass superclass == aClass ifFalse: [
-    		^ self 
-        		migrateClassNamed: aString 
-           	 	superclass: aClass 
-           	 	instanceVariableNames: aCollection 
-            	package: packageName ] ].
+	| theClass |
+	
+	theClass := Smalltalk current at: aString.
+	
+	theClass ifNotNil: [
+		theClass superclass == aClass ifFalse: [
+			^ self
+				migrateClassNamed: aString
+				superclass: aClass
+				instanceVariableNames: aCollection
+				package: packageName ] ].
 
-	^ self 
-    	basicAddSubclassOf: aClass 
-        named: aString 
-        instanceVariableNames: aCollection 
-        package: packageName
+	^ self
+		basicAddSubclassOf: aClass
+		named: aString
+		instanceVariableNames: aCollection
+		package: packageName
 !
 
 class: aClass instanceVariableNames: aString
 	self basicClass: aClass instanceVariableNames: aString.
-    self setupClass: aClass.
-    
-    SystemAnnouncer current
-    	announce: (ClassDefinitionChanged new
-        	theClass: aClass;
-            yourself)
+	self setupClass: aClass.
+	
+	SystemAnnouncer current
+		announce: (ClassDefinitionChanged new
+			theClass: aClass;
+			yourself)
 !
 
 superclass: aClass subclass: aString
@@ -439,16 +466,16 @@ superclass: aClass subclass: aString
 superclass: aClass subclass: aString instanceVariableNames: aString2 package: aString3
 	| newClass |
 	
-    newClass := self addSubclassOf: aClass
+	newClass := self addSubclassOf: aClass
 		named: aString instanceVariableNames: (self instanceVariableNamesFor: aString2)
 		package: (aString3 ifNil: ['unclassified']).
 	self setupClass: newClass.
-    
-    SystemAnnouncer current 
-    	announce: (ClassAdded new
-        	theClass: newClass;
-            yourself).
-    
+	
+	SystemAnnouncer current
+		announce: (ClassAdded new
+			theClass: newClass;
+			yourself).
+	
 	^newClass
 ! !
 
@@ -456,20 +483,20 @@ superclass: aClass subclass: aString instanceVariableNames: aString2 package: aS
 
 migrateClass: aClass superclass: anotherClass
 	console log: aClass name.
-	self 
-    	migrateClassNamed: aClass name
-        superclass: anotherClass
-        instanceVariableNames: aClass instanceVariableNames
-        package: aClass package name
+	self
+		migrateClassNamed: aClass name
+		superclass: anotherClass
+		instanceVariableNames: aClass instanceVariableNames
+		package: aClass package name
 !
 
 migrateClassNamed: aString superclass: aClass instanceVariableNames: aCollection package: packageName
 	| oldClass newClass tmp |
-    
-    tmp := 'new*', aString.
-    oldClass := Smalltalk current at: aString.
-    
-    newClass := self 
+	
+	tmp := 'new*', aString.
+	oldClass := Smalltalk current at: aString.
+	
+	newClass := self
 		addSubclassOf: aClass
 		named: tmp
 		instanceVariableNames: aCollection
@@ -481,28 +508,28 @@ migrateClassNamed: aString superclass: aClass instanceVariableNames: aCollection
 		on: Error
 		do: [ :exception |
 			self
-            	basicSwapClassNames: oldClass with: newClass;
-            	basicRemoveClass: newClass.
-            exception signal ].
+				basicSwapClassNames: oldClass with: newClass;
+				basicRemoveClass: newClass.
+			exception signal ].
 
 	self
 		rawRenameClass: oldClass to: tmp;
-        rawRenameClass: newClass to: aString.
+		rawRenameClass: newClass to: aString.
 
 	oldClass subclasses do: [ :each |
-    	self migrateClass: each superclass: newClass ].
+		self migrateClass: each superclass: newClass ].
 
-    self basicRemoveClass: oldClass.
+	self basicRemoveClass: oldClass.
 	^newClass
 !
 
 renameClass: aClass to: aString
 	self basicRenameClass: aClass to: aString.
-    
-    SystemAnnouncer current
-    	announce: (ClassRenamed new
-        	theClass: aClass;
-            yourself)
+	
+	SystemAnnouncer current
+		announce: (ClassRenamed new
+			theClass: aClass;
+			yourself)
 ! !
 
 !ClassBuilder methodsFor: 'copying'!
@@ -510,14 +537,14 @@ renameClass: aClass to: aString
 copyClass: aClass named: aString
 	| newClass |
 
-	newClass := self 
+	newClass := self
 		addSubclassOf: aClass superclass
-		named: aString 
-		instanceVariableNames: aClass instanceVariableNames 
+		named: aString
+		instanceVariableNames: aClass instanceVariableNames
 		package: aClass package name.
 
 	self copyClass: aClass to: newClass.
-    
+	
 	^newClass
 !
 
@@ -541,7 +568,7 @@ copyClass: aClass to: anotherClass
 installMethod: aCompiledMethod forClass: aBehavior category: aString
 	aCompiledMethod category: aString.
 	aBehavior addCompiledMethod: aCompiledMethod.
-    self setupClass: aBehavior.
+	self setupClass: aBehavior.
 	^aCompiledMethod
 ! !
 
@@ -580,7 +607,7 @@ basicSwapClassNames: aClass with: anotherClass
 	<
 		var tmp = aClass.className;
 		aClass.className = anotherClass.className;
-        anotherClass.className = tmp;
+		anotherClass.className = tmp;
 	>
 !
 
@@ -615,7 +642,7 @@ scanFrom: aChunkParser
 	| chunk |
 	[chunk := aChunkParser nextChunk.
 	chunk isEmpty] whileFalse: [
-	    self compileMethod: chunk].
+		self compileMethod: chunk].
 	ClassBuilder new setupClass: class
 ! !
 
@@ -650,7 +677,7 @@ scanFrom: aChunkParser
 	| chunk |
 	chunk := aChunkParser nextChunk.
 	chunk isEmpty ifFalse: [
-	    self setComment: chunk].
+		self setComment: chunk].
 ! !
 
 !ClassCommentReader methodsFor: 'initialization'!
@@ -662,7 +689,7 @@ initialize
 !ClassCommentReader methodsFor: 'private'!
 
 setComment: aString
-    class comment: aString
+	class comment: aString
 ! !
 
 Object subclass: #ClassSorterNode

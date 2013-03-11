@@ -1,11 +1,11 @@
-Smalltalk current createPackage: 'Compiler-Core' properties: #{}!
+Smalltalk current createPackage: 'Compiler-Core'!
 Object subclass: #Compiler
 	instanceVariableNames: 'currentClass source unknownVariables codeGeneratorClass'
 	package: 'Compiler-Core'!
 !Compiler commentStamp!
 I provide the public interface for compiling Amber source code into JavaScript.
 
-The code generator used to produce JavaScript can be plugged with `#codeGeneratorClass`. 
+The code generator used to produce JavaScript can be plugged with `#codeGeneratorClass`.
 The default code generator is an instance of `InlinedCodeGenerator`!
 
 !Compiler methodsFor: 'accessing'!
@@ -60,6 +60,12 @@ compileExpression: aString
 	^self compileNode: (self parse: self source)
 !
 
+compileExpression: aString on: anObject
+	self currentClass: anObject class.
+	self source: 'xxxDoIt ^[', aString, '] value'.
+	^self compileNode: (self parse: self source)
+!
+
 compileNode: aNode
 	| generator result |
 	generator := self codeGeneratorClass new.
@@ -77,26 +83,33 @@ eval: aString
 
 evaluateExpression: aString
 	"Unlike #eval: evaluate a Smalltalk expression and answer the returned object"
-	| result |
-	DoIt addCompiledMethod: (self eval: (self compileExpression: aString)).
-	result := DoIt new doIt.
-	DoIt removeCompiledMethod: (DoIt methodDictionary at: 'doIt').
+	^ self evaluateExpression: aString on: DoIt new
+!
+
+evaluateExpression: aString on: anObject
+	"Unlike #eval: evaluate a Smalltalk expression with anObject as the receiver and answer the returned object"
+	| result method |
+	method := self eval: (self compileExpression: aString on: anObject).
+	method category: 'xxxDoIt'.
+	anObject class addCompiledMethod: method.
+	result := anObject xxxDoIt.
+	anObject class removeCompiledMethod: method.
 	^result
 !
 
 install: aString forClass: aBehavior category: anotherString
-   	^ ClassBuilder new
-    	installMethod: (self eval: (self compile: aString forClass: aBehavior))
-        forClass: aBehavior
-        category: anotherString
+	^ ClassBuilder new
+		installMethod: (self eval: (self compile: aString forClass: aBehavior))
+		forClass: aBehavior
+		category: anotherString
 !
 
 parse: aString
-    ^Smalltalk current parse: aString
+	^Smalltalk current parse: aString
 !
 
 parseExpression: aString
-    ^self parse: 'doIt ^[', aString, '] value'
+	^self parse: 'doIt ^[', aString, '] value'
 !
 
 recompile: aClass
@@ -216,11 +229,11 @@ I am the abstract super class of all code generators and provide their common AP
 
 classNameFor: aClass
 	^aClass isMetaclass
-	    ifTrue: [aClass instanceClass name, '.klass']
-	    ifFalse: [
+		ifTrue: [aClass instanceClass name, '.klass']
+		ifFalse: [
 		aClass isNil
-		    ifTrue: ['nil']
-		    ifFalse: [aClass name]]
+			ifTrue: ['nil']
+			ifFalse: [aClass name]]
 !
 
 currentClass
