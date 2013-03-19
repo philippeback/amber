@@ -1,4 +1,194 @@
 smalltalk.addPackage('Compiler-Core');
+smalltalk.addClass('AbstractCodeGenerator', smalltalk.Object, ['currentClass', 'source'], 'Compiler-Core');
+smalltalk.addMethod(
+"_classNameFor_",
+smalltalk.method({
+selector: "classNameFor:",
+fn: function (aClass){
+var self=this;
+return smalltalk.withContext(function($ctx1) { var $2,$3,$1;
+$2=_st(aClass)._isMetaclass();
+if(smalltalk.assert($2)){
+$1=_st(_st(_st(aClass)._instanceClass())._name()).__comma(".klass");
+} else {
+$3=_st(aClass)._isNil();
+if(smalltalk.assert($3)){
+$1="nil";
+} else {
+$1=_st(aClass)._name();
+};
+};
+return $1;
+}, function($ctx1) {$ctx1.fill(self,"classNameFor:",{aClass:aClass},smalltalk.AbstractCodeGenerator)})},
+messageSends: ["ifTrue:ifFalse:", ",", "name", "instanceClass", "isNil", "isMetaclass"]}),
+smalltalk.AbstractCodeGenerator);
+
+smalltalk.addMethod(
+"_compileNode_",
+smalltalk.method({
+selector: "compileNode:",
+fn: function (aNode){
+var self=this;
+return smalltalk.withContext(function($ctx1) { _st(self)._subclassResponsibility();
+return self}, function($ctx1) {$ctx1.fill(self,"compileNode:",{aNode:aNode},smalltalk.AbstractCodeGenerator)})},
+messageSends: ["subclassResponsibility"]}),
+smalltalk.AbstractCodeGenerator);
+
+smalltalk.addMethod(
+"_currentClass",
+smalltalk.method({
+selector: "currentClass",
+fn: function (){
+var self=this;
+return smalltalk.withContext(function($ctx1) { var $1;
+$1=self["@currentClass"];
+return $1;
+}, function($ctx1) {$ctx1.fill(self,"currentClass",{},smalltalk.AbstractCodeGenerator)})},
+messageSends: []}),
+smalltalk.AbstractCodeGenerator);
+
+smalltalk.addMethod(
+"_currentClass_",
+smalltalk.method({
+selector: "currentClass:",
+fn: function (aClass){
+var self=this;
+return smalltalk.withContext(function($ctx1) { self["@currentClass"]=aClass;
+return self}, function($ctx1) {$ctx1.fill(self,"currentClass:",{aClass:aClass},smalltalk.AbstractCodeGenerator)})},
+messageSends: []}),
+smalltalk.AbstractCodeGenerator);
+
+smalltalk.addMethod(
+"_pseudoVariables",
+smalltalk.method({
+selector: "pseudoVariables",
+fn: function (){
+var self=this;
+return smalltalk.withContext(function($ctx1) { var $1;
+$1=["self", "super", "true", "false", "nil", "thisContext"];
+return $1;
+}, function($ctx1) {$ctx1.fill(self,"pseudoVariables",{},smalltalk.AbstractCodeGenerator)})},
+messageSends: []}),
+smalltalk.AbstractCodeGenerator);
+
+smalltalk.addMethod(
+"_safeVariableNameFor_",
+smalltalk.method({
+selector: "safeVariableNameFor:",
+fn: function (aString){
+var self=this;
+function $Smalltalk(){return smalltalk.Smalltalk||(typeof Smalltalk=="undefined"?nil:Smalltalk)}
+return smalltalk.withContext(function($ctx1) { var $2,$1;
+$2=_st(_st(_st($Smalltalk())._current())._reservedWords())._includes_(aString);
+if(smalltalk.assert($2)){
+$1=_st(aString).__comma("_");
+} else {
+$1=aString;
+};
+return $1;
+}, function($ctx1) {$ctx1.fill(self,"safeVariableNameFor:",{aString:aString},smalltalk.AbstractCodeGenerator)})},
+messageSends: ["ifTrue:ifFalse:", ",", "includes:", "reservedWords", "current"]}),
+smalltalk.AbstractCodeGenerator);
+
+smalltalk.addMethod(
+"_source",
+smalltalk.method({
+selector: "source",
+fn: function (){
+var self=this;
+return smalltalk.withContext(function($ctx1) { var $2,$1;
+$2=self["@source"];
+if(($receiver = $2) == nil || $receiver == undefined){
+$1="";
+} else {
+$1=$2;
+};
+return $1;
+}, function($ctx1) {$ctx1.fill(self,"source",{},smalltalk.AbstractCodeGenerator)})},
+messageSends: ["ifNil:"]}),
+smalltalk.AbstractCodeGenerator);
+
+smalltalk.addMethod(
+"_source_",
+smalltalk.method({
+selector: "source:",
+fn: function (aString){
+var self=this;
+return smalltalk.withContext(function($ctx1) { self["@source"]=aString;
+return self}, function($ctx1) {$ctx1.fill(self,"source:",{aString:aString},smalltalk.AbstractCodeGenerator)})},
+messageSends: []}),
+smalltalk.AbstractCodeGenerator);
+
+
+
+smalltalk.addClass('CodeGenerator', smalltalk.AbstractCodeGenerator, [], 'Compiler-Core');
+smalltalk.addMethod(
+"_compileNode_",
+smalltalk.method({
+selector: "compileNode:",
+fn: function (aNode){
+var self=this;
+var ir,stream;
+return smalltalk.withContext(function($ctx1) { var $2,$3,$1;
+_st(_st(self)._semanticAnalyzer())._visit_(aNode);
+ir=_st(_st(self)._translator())._visit_(aNode);
+$2=_st(self)._irTranslator();
+_st($2)._visit_(ir);
+$3=_st($2)._contents();
+$1=$3;
+return $1;
+}, function($ctx1) {$ctx1.fill(self,"compileNode:",{aNode:aNode,ir:ir,stream:stream},smalltalk.CodeGenerator)})},
+messageSends: ["visit:", "semanticAnalyzer", "translator", "irTranslator", "contents"]}),
+smalltalk.CodeGenerator);
+
+smalltalk.addMethod(
+"_irTranslator",
+smalltalk.method({
+selector: "irTranslator",
+fn: function (){
+var self=this;
+function $IRJSTranslator(){return smalltalk.IRJSTranslator||(typeof IRJSTranslator=="undefined"?nil:IRJSTranslator)}
+return smalltalk.withContext(function($ctx1) { var $1;
+$1=_st($IRJSTranslator())._new();
+return $1;
+}, function($ctx1) {$ctx1.fill(self,"irTranslator",{},smalltalk.CodeGenerator)})},
+messageSends: ["new"]}),
+smalltalk.CodeGenerator);
+
+smalltalk.addMethod(
+"_semanticAnalyzer",
+smalltalk.method({
+selector: "semanticAnalyzer",
+fn: function (){
+var self=this;
+function $SemanticAnalyzer(){return smalltalk.SemanticAnalyzer||(typeof SemanticAnalyzer=="undefined"?nil:SemanticAnalyzer)}
+return smalltalk.withContext(function($ctx1) { var $1;
+$1=_st($SemanticAnalyzer())._on_(_st(self)._currentClass());
+return $1;
+}, function($ctx1) {$ctx1.fill(self,"semanticAnalyzer",{},smalltalk.CodeGenerator)})},
+messageSends: ["on:", "currentClass"]}),
+smalltalk.CodeGenerator);
+
+smalltalk.addMethod(
+"_translator",
+smalltalk.method({
+selector: "translator",
+fn: function (){
+var self=this;
+function $IRASTTranslator(){return smalltalk.IRASTTranslator||(typeof IRASTTranslator=="undefined"?nil:IRASTTranslator)}
+return smalltalk.withContext(function($ctx1) { var $2,$3,$1;
+$2=_st($IRASTTranslator())._new();
+_st($2)._source_(_st(self)._source());
+_st($2)._theClass_(_st(self)._currentClass());
+$3=_st($2)._yourself();
+$1=$3;
+return $1;
+}, function($ctx1) {$ctx1.fill(self,"translator",{},smalltalk.CodeGenerator)})},
+messageSends: ["source:", "source", "new", "theClass:", "currentClass", "yourself"]}),
+smalltalk.CodeGenerator);
+
+
+
 smalltalk.addClass('Compiler', smalltalk.Object, ['currentClass', 'source', 'unknownVariables', 'codeGeneratorClass'], 'Compiler-Core');
 smalltalk.addMethod(
 "_codeGeneratorClass",
@@ -6,10 +196,11 @@ smalltalk.method({
 selector: "codeGeneratorClass",
 fn: function (){
 var self=this;
+function $InliningCodeGenerator(){return smalltalk.InliningCodeGenerator||(typeof InliningCodeGenerator=="undefined"?nil:InliningCodeGenerator)}
 return smalltalk.withContext(function($ctx1) { var $2,$1;
 $2=self["@codeGeneratorClass"];
 if(($receiver = $2) == nil || $receiver == undefined){
-$1=(smalltalk.InliningCodeGenerator || InliningCodeGenerator);
+$1=$InliningCodeGenerator();
 } else {
 $1=$2;
 };
@@ -63,8 +254,9 @@ smalltalk.method({
 selector: "compileExpression:",
 fn: function (aString){
 var self=this;
+function $DoIt(){return smalltalk.DoIt||(typeof DoIt=="undefined"?nil:DoIt)}
 return smalltalk.withContext(function($ctx1) { var $1;
-_st(self)._currentClass_((smalltalk.DoIt || DoIt));
+_st(self)._currentClass_($DoIt());
 _st(self)._source_(_st(_st("doIt ^[").__comma(aString)).__comma("] value"));
 $1=_st(self)._compileNode_(_st(self)._parse_(_st(self)._source()));
 return $1;
@@ -148,8 +340,9 @@ smalltalk.method({
 selector: "evaluateExpression:",
 fn: function (aString){
 var self=this;
+function $DoIt(){return smalltalk.DoIt||(typeof DoIt=="undefined"?nil:DoIt)}
 return smalltalk.withContext(function($ctx1) { var $1;
-$1=_st(self)._evaluateExpression_on_(aString,_st((smalltalk.DoIt || DoIt))._new());
+$1=_st(self)._evaluateExpression_on_(aString,_st($DoIt())._new());
 return $1;
 }, function($ctx1) {$ctx1.fill(self,"evaluateExpression:",{aString:aString},smalltalk.Compiler)})},
 messageSends: ["evaluateExpression:on:", "new"]}),
@@ -180,8 +373,9 @@ smalltalk.method({
 selector: "install:forClass:category:",
 fn: function (aString,aBehavior,anotherString){
 var self=this;
+function $ClassBuilder(){return smalltalk.ClassBuilder||(typeof ClassBuilder=="undefined"?nil:ClassBuilder)}
 return smalltalk.withContext(function($ctx1) { var $1;
-$1=_st(_st((smalltalk.ClassBuilder || ClassBuilder))._new())._installMethod_forClass_category_(_st(self)._eval_(_st(self)._compile_forClass_(aString,aBehavior)),aBehavior,anotherString);
+$1=_st(_st($ClassBuilder())._new())._installMethod_forClass_category_(_st(self)._eval_(_st(self)._compile_forClass_(aString,aBehavior)),aBehavior,anotherString);
 return $1;
 }, function($ctx1) {$ctx1.fill(self,"install:forClass:category:",{aString:aString,aBehavior:aBehavior,anotherString:anotherString},smalltalk.Compiler)})},
 messageSends: ["installMethod:forClass:category:", "eval:", "compile:forClass:", "new"]}),
@@ -193,8 +387,9 @@ smalltalk.method({
 selector: "parse:",
 fn: function (aString){
 var self=this;
+function $Smalltalk(){return smalltalk.Smalltalk||(typeof Smalltalk=="undefined"?nil:Smalltalk)}
 return smalltalk.withContext(function($ctx1) { var $1;
-$1=_st(_st((smalltalk.Smalltalk || Smalltalk))._current())._parse_(aString);
+$1=_st(_st($Smalltalk())._current())._parse_(aString);
 return $1;
 }, function($ctx1) {$ctx1.fill(self,"parse:",{aString:aString},smalltalk.Compiler)})},
 messageSends: ["parse:", "current"]}),
@@ -238,9 +433,11 @@ smalltalk.method({
 selector: "recompileAll",
 fn: function (){
 var self=this;
+function $Transcript(){return smalltalk.Transcript||(typeof Transcript=="undefined"?nil:Transcript)}
+function $Smalltalk(){return smalltalk.Smalltalk||(typeof Smalltalk=="undefined"?nil:Smalltalk)}
 return smalltalk.withContext(function($ctx1) { var $1,$2;
-_st(_st(_st((smalltalk.Smalltalk || Smalltalk))._current())._classes())._do_((function(each){
-return smalltalk.withContext(function($ctx2) {$1=(smalltalk.Transcript || Transcript);
+_st(_st(_st($Smalltalk())._current())._classes())._do_((function(each){
+return smalltalk.withContext(function($ctx2) {$1=$Transcript();
 _st($1)._show_(each);
 $2=_st($1)._cr();
 $2;
@@ -323,7 +520,8 @@ smalltalk.method({
 selector: "recompileAll",
 fn: function (){
 var self=this;
-return smalltalk.withContext(function($ctx1) { _st(_st(_st((smalltalk.Smalltalk || Smalltalk))._current())._classes())._do_((function(each){
+function $Smalltalk(){return smalltalk.Smalltalk||(typeof Smalltalk=="undefined"?nil:Smalltalk)}
+return smalltalk.withContext(function($ctx1) { _st(_st(_st($Smalltalk())._current())._classes())._do_((function(each){
 return smalltalk.withContext(function($ctx2) {return _st(self)._recompile_(each);
 }, function($ctx2) {$ctx2.fillBlock({each:each},$ctx1)})}));
 return self}, function($ctx1) {$ctx1.fill(self,"recompileAll",{},smalltalk.Compiler.klass)})},
@@ -557,190 +755,6 @@ return $1;
 }, function($ctx1) {$ctx1.fill(self,"visitVariableNode:",{aNode:aNode},smalltalk.NodeVisitor)})},
 messageSends: ["visitNode:"]}),
 smalltalk.NodeVisitor);
-
-
-
-smalltalk.addClass('AbstractCodeGenerator', smalltalk.NodeVisitor, ['currentClass', 'source'], 'Compiler-Core');
-smalltalk.addMethod(
-"_classNameFor_",
-smalltalk.method({
-selector: "classNameFor:",
-fn: function (aClass){
-var self=this;
-return smalltalk.withContext(function($ctx1) { var $2,$3,$1;
-$2=_st(aClass)._isMetaclass();
-if(smalltalk.assert($2)){
-$1=_st(_st(_st(aClass)._instanceClass())._name()).__comma(".klass");
-} else {
-$3=_st(aClass)._isNil();
-if(smalltalk.assert($3)){
-$1="nil";
-} else {
-$1=_st(aClass)._name();
-};
-};
-return $1;
-}, function($ctx1) {$ctx1.fill(self,"classNameFor:",{aClass:aClass},smalltalk.AbstractCodeGenerator)})},
-messageSends: ["ifTrue:ifFalse:", ",", "name", "instanceClass", "isNil", "isMetaclass"]}),
-smalltalk.AbstractCodeGenerator);
-
-smalltalk.addMethod(
-"_compileNode_",
-smalltalk.method({
-selector: "compileNode:",
-fn: function (aNode){
-var self=this;
-return smalltalk.withContext(function($ctx1) { _st(self)._subclassResponsibility();
-return self}, function($ctx1) {$ctx1.fill(self,"compileNode:",{aNode:aNode},smalltalk.AbstractCodeGenerator)})},
-messageSends: ["subclassResponsibility"]}),
-smalltalk.AbstractCodeGenerator);
-
-smalltalk.addMethod(
-"_currentClass",
-smalltalk.method({
-selector: "currentClass",
-fn: function (){
-var self=this;
-return smalltalk.withContext(function($ctx1) { var $1;
-$1=self["@currentClass"];
-return $1;
-}, function($ctx1) {$ctx1.fill(self,"currentClass",{},smalltalk.AbstractCodeGenerator)})},
-messageSends: []}),
-smalltalk.AbstractCodeGenerator);
-
-smalltalk.addMethod(
-"_currentClass_",
-smalltalk.method({
-selector: "currentClass:",
-fn: function (aClass){
-var self=this;
-return smalltalk.withContext(function($ctx1) { self["@currentClass"]=aClass;
-return self}, function($ctx1) {$ctx1.fill(self,"currentClass:",{aClass:aClass},smalltalk.AbstractCodeGenerator)})},
-messageSends: []}),
-smalltalk.AbstractCodeGenerator);
-
-smalltalk.addMethod(
-"_pseudoVariables",
-smalltalk.method({
-selector: "pseudoVariables",
-fn: function (){
-var self=this;
-return smalltalk.withContext(function($ctx1) { return ["self", "super", "true", "false", "nil", "thisContext"];
-}, function($ctx1) {$ctx1.fill(self,"pseudoVariables",{},smalltalk.AbstractCodeGenerator)})},
-messageSends: []}),
-smalltalk.AbstractCodeGenerator);
-
-smalltalk.addMethod(
-"_safeVariableNameFor_",
-smalltalk.method({
-selector: "safeVariableNameFor:",
-fn: function (aString){
-var self=this;
-return smalltalk.withContext(function($ctx1) { var $2,$1;
-$2=_st(_st(_st((smalltalk.Smalltalk || Smalltalk))._current())._reservedWords())._includes_(aString);
-if(smalltalk.assert($2)){
-$1=_st(aString).__comma("_");
-} else {
-$1=aString;
-};
-return $1;
-}, function($ctx1) {$ctx1.fill(self,"safeVariableNameFor:",{aString:aString},smalltalk.AbstractCodeGenerator)})},
-messageSends: ["ifTrue:ifFalse:", ",", "includes:", "reservedWords", "current"]}),
-smalltalk.AbstractCodeGenerator);
-
-smalltalk.addMethod(
-"_source",
-smalltalk.method({
-selector: "source",
-fn: function (){
-var self=this;
-return smalltalk.withContext(function($ctx1) { var $2,$1;
-$2=self["@source"];
-if(($receiver = $2) == nil || $receiver == undefined){
-$1="";
-} else {
-$1=$2;
-};
-return $1;
-}, function($ctx1) {$ctx1.fill(self,"source",{},smalltalk.AbstractCodeGenerator)})},
-messageSends: ["ifNil:"]}),
-smalltalk.AbstractCodeGenerator);
-
-smalltalk.addMethod(
-"_source_",
-smalltalk.method({
-selector: "source:",
-fn: function (aString){
-var self=this;
-return smalltalk.withContext(function($ctx1) { self["@source"]=aString;
-return self}, function($ctx1) {$ctx1.fill(self,"source:",{aString:aString},smalltalk.AbstractCodeGenerator)})},
-messageSends: []}),
-smalltalk.AbstractCodeGenerator);
-
-
-
-smalltalk.addClass('CodeGenerator', smalltalk.AbstractCodeGenerator, [], 'Compiler-Core');
-smalltalk.addMethod(
-"_compileNode_",
-smalltalk.method({
-selector: "compileNode:",
-fn: function (aNode){
-var self=this;
-var ir,stream;
-return smalltalk.withContext(function($ctx1) { var $2,$3,$1;
-_st(_st(self)._semanticAnalyzer())._visit_(aNode);
-ir=_st(_st(self)._translator())._visit_(aNode);
-$2=_st(self)._irTranslator();
-_st($2)._visit_(ir);
-$3=_st($2)._contents();
-$1=$3;
-return $1;
-}, function($ctx1) {$ctx1.fill(self,"compileNode:",{aNode:aNode,ir:ir,stream:stream},smalltalk.CodeGenerator)})},
-messageSends: ["visit:", "semanticAnalyzer", "translator", "irTranslator", "contents"]}),
-smalltalk.CodeGenerator);
-
-smalltalk.addMethod(
-"_irTranslator",
-smalltalk.method({
-selector: "irTranslator",
-fn: function (){
-var self=this;
-return smalltalk.withContext(function($ctx1) { var $1;
-$1=_st((smalltalk.IRJSTranslator || IRJSTranslator))._new();
-return $1;
-}, function($ctx1) {$ctx1.fill(self,"irTranslator",{},smalltalk.CodeGenerator)})},
-messageSends: ["new"]}),
-smalltalk.CodeGenerator);
-
-smalltalk.addMethod(
-"_semanticAnalyzer",
-smalltalk.method({
-selector: "semanticAnalyzer",
-fn: function (){
-var self=this;
-return smalltalk.withContext(function($ctx1) { var $1;
-$1=_st((smalltalk.SemanticAnalyzer || SemanticAnalyzer))._on_(_st(self)._currentClass());
-return $1;
-}, function($ctx1) {$ctx1.fill(self,"semanticAnalyzer",{},smalltalk.CodeGenerator)})},
-messageSends: ["on:", "currentClass"]}),
-smalltalk.CodeGenerator);
-
-smalltalk.addMethod(
-"_translator",
-smalltalk.method({
-selector: "translator",
-fn: function (){
-var self=this;
-return smalltalk.withContext(function($ctx1) { var $2,$3,$1;
-$2=_st((smalltalk.IRASTTranslator || IRASTTranslator))._new();
-_st($2)._source_(_st(self)._source());
-_st($2)._theClass_(_st(self)._currentClass());
-$3=_st($2)._yourself();
-$1=$3;
-return $1;
-}, function($ctx1) {$ctx1.fill(self,"translator",{},smalltalk.CodeGenerator)})},
-messageSends: ["source:", "source", "new", "theClass:", "currentClass", "yourself"]}),
-smalltalk.CodeGenerator);
 
 
 

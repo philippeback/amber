@@ -35,18 +35,10 @@ value: aValue
 
 !Association methodsFor: 'printing'!
 
-printString
-	"print the contents of the Association into a string and return the string"
-	^String streamContents: [:aStream |
-		self storeOn: aStream]
-!
-
-storeOn: aStream
-	"Store in the format: key->value"
-
-	key storeOn: aStream.
-	aStream nextPutAll: '->'.
-	value storeOn: aStream.
+printOn: aStream
+	self key printOn: aStream.
+	aStream nextPutAll: ' -> '.
+	self value printOn: aStream
 ! !
 
 !Association class methodsFor: 'instance creation'!
@@ -77,24 +69,8 @@ occurrencesOf: anObject
 	^tally
 !
 
-readStream
-	^self stream
-!
-
 size
 	self subclassResponsibility
-!
-
-stream
-	^self streamClass on: self
-!
-
-streamClass
-	^self class streamClass
-!
-
-writeStream
-	^self stream
 ! !
 
 !Collection methodsFor: 'adding/removing'!
@@ -231,16 +207,10 @@ errorNotFound
 	self error: 'Object is not in the collection'
 ! !
 
-!Collection methodsFor: 'printing'!
+!Collection methodsFor: 'streaming'!
 
-printString
-	"print the contents of the Collection into a string and return it"
-	^String streamContents: [:aStream |
-		aStream
-			nextPutAll: super printString, ' ('.
-		self do: [:each | aStream nextPutAll: each printString]
-			separatedBy: [aStream nextPutAll: ' '].
-		aStream nextPutAll: ')']
+putOn: aStream
+	self do: [ :each | each putOn: aStream ]
 ! !
 
 !Collection methodsFor: 'testing'!
@@ -269,12 +239,6 @@ isEmpty
 
 notEmpty
 	^self isEmpty not
-! !
-
-!Collection class methodsFor: 'accessing'!
-
-streamClass
-		^Stream
 ! !
 
 !Collection class methodsFor: 'instance creation'!
@@ -374,7 +338,7 @@ indexOf: anObject ifAbsent: aBlock
 	self subclassResponsibility
 ! !
 
-!IndexableCollection methodsFor: 'enumeration'!
+!IndexableCollection methodsFor: 'enumarating'!
 
 with: anotherCollection do: aBlock
 	"Calls aBlock with every value from self
@@ -581,22 +545,14 @@ withIndexDo: aBlock
 
 !HashedCollection methodsFor: 'printing'!
 
-printString
-	"print the contents of the HashedCollection into a string and return the string"
-	^String streamContents: [:aStream |
-		aStream nextPutAll: 'a ', self class name, '('.
-		self associations
-			do: [:each | each storeOn: aStream]
-			separatedBy: [ aStream nextPutAll: ' , '].
-		aStream nextPutAll: ')']
-!
-
-storeOn: aStream
-	aStream nextPutAll: '#{'.
+printOn: aStream
+	super printOn: aStream.
+	
+	aStream nextPutAll: ' ('.
 	self associations
-		do: [:each | each storeOn: aStream]
-		separatedBy: [ aStream nextPutAll: '. '].
-	aStream nextPutAll: '}'
+		do: [:each | each printOn: aStream ]
+		separatedBy: [ aStream nextPutAll: ' , ' ].
+	aStream nextPutAll: ')'
 ! !
 
 !HashedCollection methodsFor: 'testing'!
@@ -878,10 +834,51 @@ withIndexDo: aBlock
 	<for(var i=0;i<self.length;i++){aBlock(self[i], i+1);}>
 ! !
 
+!SequenceableCollection methodsFor: 'streaming'!
+
+newStream
+	^self streamClass on: self
+!
+
+readStream
+	"For Pharo compatibility"
+	
+	^self stream
+!
+
+stream
+	^self newStream
+!
+
+streamClass
+	^self class streamClass
+!
+
+writeStream
+	"For Pharo compatibility"
+	
+	^self stream
+! !
+
 !SequenceableCollection methodsFor: 'testing'!
 
 includes: anObject
 	^(self indexOf: anObject ifAbsent: [nil]) notNil
+! !
+
+!SequenceableCollection class methodsFor: 'accessing'!
+
+streamClass
+		^Stream
+! !
+
+!SequenceableCollection class methodsFor: 'streaming'!
+
+streamContents: aBlock
+	| stream |
+	stream := (self streamClass on: self new).
+	aBlock value: stream.
+	^ stream contents
 ! !
 
 SequenceableCollection subclass: #Array
@@ -966,6 +963,18 @@ sorted: aBlock
 	^self copy sort: aBlock
 ! !
 
+!Array methodsFor: 'printing'!
+
+printOn: aStream
+	super printOn: aStream.
+	
+	aStream nextPutAll: ' ('.
+	self 
+		do: [ :each | each printOn: aStream ]
+		separatedBy: [ aStream nextPutAll: ' ' ].
+	aStream nextPutAll: ')'
+! !
+
 !Array class methodsFor: 'instance creation'!
 
 new: anInteger
@@ -1040,7 +1049,7 @@ asString
 !
 
 asSymbol
-	^self subclassResponsibility
+	^self asString
 !
 
 asUppercase
@@ -1061,8 +1070,14 @@ errorReadOnly
 
 !CharacterArray methodsFor: 'printing'!
 
-printString
-	^self asString printString
+printOn: aStream
+	self asString printOn: aStream
+! !
+
+!CharacterArray methodsFor: 'streaming'!
+
+putOn: aStream
+	aStream nextPutString: self
 ! !
 
 !CharacterArray class methodsFor: 'instance creation'!
@@ -1173,7 +1188,7 @@ asString
 !
 
 asSymbol
-	^Symbol lookup: self
+	^ self
 !
 
 asUppercase
@@ -1222,8 +1237,11 @@ printNl
 	<console.log(self)>
 !
 
-printString
-	^'''', self, ''''
+printOn: aStream
+	aStream 
+		nextPutAll: '''';
+		nextPutAll: self;
+		nextPutAll: ''''
 ! !
 
 !String methodsFor: 'regular expressions'!
@@ -1348,8 +1366,18 @@ includesSubString: subString
 	< return self.indexOf(subString) !!= -1 >
 !
 
+isImmutable
+	^ true
+!
+
 isString
 	^true
+!
+
+isVowel
+	"Answer true if the receiver is a one character string containing a voyel"
+	
+	^ self size = 1 and: [ 'aeiou' includes: self asLowercase ]
 ! !
 
 !String class methodsFor: 'accessing'!
@@ -1385,14 +1413,7 @@ fromCharCode: anInteger
 !
 
 fromString: aString
-		<return new self.fn(aString)>
-!
-
-streamContents: blockWithArg
-	|stream|
-	stream := (self streamClass on: String new).
-	blockWithArg value: stream.
-	^ stream contents
+		<return String(aString)>
 !
 
 value: aUTFCharCode
@@ -1411,140 +1432,6 @@ randomNotIn: aString
 	| result |
     [ result := self random. aString includesSubString: result ] whileTrue.
     ^result
-! !
-
-CharacterArray subclass: #Symbol
-	instanceVariableNames: ''
-	package: 'Kernel-Collections'!
-!Symbol commentStamp!
-I represent Strings that are created uniquely.
-Symbols are unique through the system.
-
-Thus, someString asSymbol == someString asSymbol.!
-
-!Symbol methodsFor: 'accessing'!
-
-at: anIndex ifAbsent: aBlock
-	^self asString at: anIndex ifAbsent: aBlock
-!
-
-size
-	^self asString size
-! !
-
-!Symbol methodsFor: 'comparing'!
-
-< aSymbol
-	^self asString < aSymbol asString
-!
-
-<= aSymbol
-	^self asString <= aSymbol asString
-!
-
-= aSymbol
-	aSymbol class = self class ifFalse: [^false].
-	^self asString = aSymbol asString
-!
-
-> aSymbol
-	^self asString > aSymbol asString
-!
-
->= aSymbol
-	^self asString >= aSymbol asString
-! !
-
-!Symbol methodsFor: 'converting'!
-
-asJSON
-	^self asString asJSON
-!
-
-asJavascript
-	^'smalltalk.symbolFor(', self asString asJavascript, ')'
-!
-
-asSelector
-	^self asString asSelector
-!
-
-asString
-	<return self.value>
-!
-
-asSuperSelector
-	^self asString asSuperSelector
-!
-
-asSymbol
-	^self
-! !
-
-!Symbol methodsFor: 'copying'!
-
-copyFrom: anIndex to: anotherIndex
-	^self class fromString: (self asString copyFrom: anIndex to: anotherIndex)
-!
-
-deepCopy
-	^self
-!
-
-shallowCopy
-	^self
-! !
-
-!Symbol methodsFor: 'enumerating'!
-
-collect: aBlock
-	^ (self asString collect: aBlock) asSymbol
-!
-
-detect: aBlock
-	^ self asString detect: aBlock
-!
-
-do: aBlock
-	self asString do: aBlock
-!
-
-select: aBlock
-	^ (self asString select: aBlock) asSymbol
-!
-
-withIndexDo: aBlock
-	self asString withIndexDo: aBlock
-! !
-
-!Symbol methodsFor: 'evaluating'!
-
-value: anObject
-	^anObject perform: self
-! !
-
-!Symbol methodsFor: 'printing'!
-
-isSymbol
-	^true
-!
-
-printString
-	^'#', self asString
-! !
-
-!Symbol class methodsFor: 'instance creation'!
-
-basicNew
-	self shouldNotImplement
-!
-
-fromString: aString
-	^self lookup: aString
-!
-
-lookup: aString
-	<return smalltalk.symbolFor(aString);>
 ! !
 
 Collection subclass: #Set
@@ -1621,6 +1508,18 @@ select: aBlock
 initialize
 	super initialize.
 	elements := #()
+! !
+
+!Set methodsFor: 'printing'!
+
+printOn: aStream
+	super printOn: aStream.
+	
+	aStream nextPutAll: ' ('.
+	self 
+		do: [ :each | each printOn: aStream ]
+		separatedBy: [ aStream nextPutAll: ' ' ].
+	aStream nextPutAll: ')'
 ! !
 
 !Set methodsFor: 'testing'!
@@ -1823,6 +1722,10 @@ isEmpty
 
 !Stream methodsFor: 'writing'!
 
+<< anObject
+	self write: anObject
+!
+
 nextPut: anObject
 	self position: self position + 1.
 	self collection at: self position put: anObject.
@@ -1832,6 +1735,14 @@ nextPut: anObject
 nextPutAll: aCollection
 	aCollection do: [:each |
 		self nextPut: each]
+!
+
+nextPutString: aString
+	self nextPut: aString
+!
+
+write: anObject
+	anObject putOn: self
 ! !
 
 !Stream class methodsFor: 'instance creation'!
@@ -1879,15 +1790,25 @@ nextPut: aString
 !
 
 nextPutAll: aString
-	self setCollection:
-		(self collection copyFrom: 1 to: self position),
-		aString,
-		(self collection copyFrom: (self position + 1 + aString size) to: self collection size).
+	| pre post |
+	self atEnd ifTrue: [ self setCollection: self collection, aString ] ifFalse: [
+		pre := self collection copyFrom: 1 to: self position.
+		post := self collection copyFrom: (self position + 1 + aString size) to: self collection size.
+		self setCollection: pre, aString, post
+	].
 	self position: self position + aString size.
 	self setStreamSize: (self streamSize max: self position)
 !
 
+nextPutString: aString
+	self nextPutAll: aString
+!
+
 space
 	self nextPut: ' '
+!
+
+tab
+	^self nextPutAll: String tab
 ! !
 

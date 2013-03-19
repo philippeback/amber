@@ -332,6 +332,15 @@ testMessageSends
 	self should: 'foo ^ 1 to: 5 by: 2' return: #(1 3 5)
 !
 
+testMutableLiterals
+	"Mutable literals must be aliased in cascades.
+	See https://github.com/amber-smalltalk/amber/issues/428"
+	
+	self 
+		should: 'foo ^ #( 1 2 ) at: 1 put: 3; yourself' 
+		return: #(3 2)
+!
+
 testNestedIfTrue
 	self should: 'foo ^ true ifTrue: [ false ifFalse: [ 1 ] ]' return: 1.
 	self should: 'foo ^ true ifTrue: [ false ifTrue: [ 1 ] ]' return: nil.
@@ -345,6 +354,11 @@ testNonLocalReturn
 	self should: 'foo [ ^ 1 + 1 ] value' return: 2.
 	self should: 'foo | a b | a := 1. b := 2. [ ^ a + b ] value. self halt' return: 3.
 	self should: 'foo [ :x | ^ x + x ] value: 4. ^ 2' return: 8
+!
+
+testPascalCaseGlobal
+	self should: 'foo ^Object' return: (smalltalk at: 'Object').
+	self should: 'foo ^NonExistent' return: nil
 !
 
 testSendReceiverAndArgumentsOrdered

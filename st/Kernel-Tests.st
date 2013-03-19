@@ -421,7 +421,36 @@ isAbstract
 	^ self collectionClass isNil
 ! !
 
-CollectionTest subclass: #HashedCollectionTest
+CollectionTest subclass: #IndexableCollectionTest
+	instanceVariableNames: ''
+	package: 'Kernel-Tests'!
+
+!IndexableCollectionTest methodsFor: 'tests'!
+
+testAt
+	self assert: (self collection at: 4) equals: -4.
+	self should: [ self collection at: 5 ] raise: Error
+!
+
+testAtIfAbsent
+	self assert: (self collection at: (self collection size + 1) ifAbsent: [ 'none' ]) equals: 'none'
+!
+
+testIndexOf
+	self assert: (self collection indexOf: 2) equals: 2.
+	self should: [ self collection indexOf: 999 ] raise: Error.
+	self assert: (self collection indexOf: 999 ifAbsent: [ 'sentinel' ]) equals: 'sentinel'
+!
+
+testWithIndexDo
+	| collection |
+	collection := self collection.
+	
+	self collection withIndexDo: [ :each :index |
+		self assert: (collection at: index) equals: each ]
+! !
+
+IndexableCollectionTest subclass: #HashedCollectionTest
 	instanceVariableNames: ''
 	package: 'Kernel-Tests'!
 
@@ -437,8 +466,12 @@ collectionWithDuplicates
 
 !HashedCollectionTest methodsFor: 'tests'!
 
-testIndexOf
+testAt
+	self assert: (self collection at: 'a') equals: 2.
+	self should: [ self collection at: 5 ] raise: Error
+!
 
+testIndexOf
 	self assert: (self collection indexOf: 2) equals: 'a'.
 	self should: [ self collection indexOf: 999 ] raise: Error.
 	self assert: (self collection indexOf: 999 ifAbsent: [ 'sentinel' ]) equals: 'sentinel'
@@ -594,7 +627,7 @@ testPrintString
 							at:'firstname' put: 'James';
 							at:'lastname' put: 'Bond';
 							printString)
-		equals: 'a Dictionary(''firstname''->''James'' , ''lastname''->''Bond'')'
+		equals: 'a Dictionary (''firstname'' -> ''James'' , ''lastname'' -> ''Bond'')'
 !
 
 testRemoveKey
@@ -663,20 +696,9 @@ collectionClass
 	^ Dictionary
 ! !
 
-CollectionTest subclass: #SequenceableCollectionTest
+IndexableCollectionTest subclass: #SequenceableCollectionTest
 	instanceVariableNames: ''
 	package: 'Kernel-Tests'!
-
-!SequenceableCollectionTest methodsFor: 'tests'!
-
-testAt
-	self assert: (self collection at: 4) equals: -4.
-	self should: [ self collection at: 5 ] raise: Error
-!
-
-testAtIfAbsent
-	self assert: (self collection at: (self collection size + 1) ifAbsent: [ 'none' ]) equals: 'none'
-! !
 
 SequenceableCollectionTest subclass: #ArrayTest
 	instanceVariableNames: ''
@@ -706,17 +728,17 @@ testIfEmpty
 testPrintString
 	| array |
 	array := Array new.
-	self assert: array printString equals: 'a Array ()'.
+	self assert: array printString equals: 'an Array ()'.
 	array add: 1; add: 3.
-	self assert: array printString equals: 'a Array (1 3)'.
+	self assert: array printString equals: 'an Array (1 3)'.
 	array add: 'foo'.
-	self assert: array printString equals: 'a Array (1 3 ''foo'')'.
+	self assert: array printString equals: 'an Array (1 3 ''foo'')'.
 	array remove: 1; remove: 3.
-	self assert: array printString equals: 'a Array (''foo'')'.
+	self assert: array printString equals: 'an Array (''foo'')'.
 	array addLast: 3.
-	self assert: array printString equals: 'a Array (''foo'' 3)'.
+	self assert: array printString equals: 'an Array (''foo'' 3)'.
 	array addLast: 3.
-	self assert: array printString equals: 'a Array (''foo'' 3 3)'.
+	self assert: array printString equals: 'an Array (''foo'' 3 3)'.
 ! !
 
 !ArrayTest class methodsFor: 'accessing'!
@@ -810,6 +832,12 @@ testIncludesSubString
 	self deny: ('amber' includesSubString: 'zork').
 !
 
+testIndexOf
+	self assert: (self collection indexOf: 'e') equals: 2.
+	self should: [ self collection indexOf: 999 ] raise: Error.
+	self assert: (self collection indexOf: 999 ifAbsent: [ 'sentinel' ]) equals: 'sentinel'
+!
+
 testJoin
 	self assert: (',' join: #('hello' 'world')) equals: 'hello,world'
 !
@@ -843,127 +871,6 @@ collectionClass
 	^ String
 ! !
 
-SequenceableCollectionTest subclass: #SymbolTest
-	instanceVariableNames: ''
-	package: 'Kernel-Tests'!
-
-!SymbolTest methodsFor: 'accessing'!
-
-collection
-	^ #hello
-!
-
-collectionWithDuplicates
-	^ #phhaaarorra
-! !
-
-!SymbolTest methodsFor: 'tests'!
-
-testAsString
-	self assert: #hello asString equals: 'hello'
-!
-
-testAsSymbol
-	self assert: #hello == #hello asSymbol
-!
-
-testAt
-	self assert: (#hello at: 1) equals: 'h'.
-	self assert: (#hello at: 5) equals: 'o'.
-	self assert: (#hello at: 6 ifAbsent: [nil]) equals: nil
-!
-
-testAtPut
-	"Symbol instances are read-only"
-	self should: ['hello' at: 1 put: 'a'] raise: Error
-!
-
-testCollect
-	| newCollection |
-	newCollection := #hheelllloo.
-	self
-		assertSameContents: (self collection collect: [ :each |
-			each, each ])
-		as: newCollection
-!
-
-testComparing
-	self assert: #ab > #aa.
-	self deny: #ab > #ba.
-
-	self assert: #ab < #ba.
-	self deny: #bb < #ba.
-
-	self assert: #ab >= #aa.
-	self deny: #ab >= #ba.
-
-	self assert: #ab <= #ba.
-	self deny: #bb <= #ba
-!
-
-testCopying
-	self assert: #hello copy == #hello.
-	self assert: #hello deepCopy == #hello
-!
-
-testDetect
-	self assert: (self collection detect: [ :each | each = 'h' ]) equals: 'h'.
-	self
-		should: [ self collection detect: [ :each | each = 'z' ] ]
-		raise: Error
-!
-
-testEquality
-	self assert: (#hello = #hello).
-	self deny: #hello = #world.
-
-	self assert: (#hello = #hello yourself).
-	self assert: (#hello yourself = #hello).
-
-	self deny: #hello = 'hello'.
-	self deny: 'hello' = #hello.
-!
-
-testIdentity
-	self assert: #hello == #hello.
-	self deny: #hello == #world.
-
-	self assert: #hello = #hello yourself.
-	self assert: #hello yourself = #hello asString asSymbol
-!
-
-testIsEmpty
-	self deny: self collection isEmpty.
-	self assert: '' asSymbol isEmpty
-!
-
-testIsSymbolIsString
-	self assert: #hello isSymbol.
-	self deny: 'hello' isSymbol.
-	self deny: #hello isString.
-	self assert: 'hello' isString
-!
-
-testSelect
-	| newCollection |
-	newCollection := 'o'.
-	self
-		assertSameContents: (self collection select: [ :each |
-			each = 'o' ])
-		as: newCollection
-!
-
-testSize
-	self assert: #a size equals: 1.
-	self assert: #aaaaa size equals: 5
-! !
-
-!SymbolTest class methodsFor: 'accessing'!
-
-collectionClass
-	^ Symbol
-! !
-
 TestCase subclass: #JSObjectProxyTest
 	instanceVariableNames: ''
 	package: 'Kernel-Tests'!
@@ -983,6 +890,26 @@ testAtIfAbsent
 	self assert: (testObject at: 'e' ifAbsent: ['Property does not exist']) equals: nil.
 	self assert: (testObject at: 'a' ifAbsent: ['Property does not exist']) equals: 1.
 	self assert: (testObject at: 'f' ifAbsent: ['Property does not exist']) equals: nil.
+!
+
+testAtIfPresent
+	| testObject |
+	
+	testObject := self jsObject.
+	
+	self assert: (testObject at: 'abc' ifPresent: [ :x | 'hello ',x asString ]) equals: nil.
+	self assert: (testObject at: 'e' ifPresent: [:x | 'hello ',x asString ]) equals: 'hello nil'.
+	self assert: (testObject at: 'a' ifPresent: [:x | 'hello ',x asString ]) equals: 'hello 1'.
+	self assert: (testObject at: 'f' ifPresent: [:x | 'hello ',x asString ]) equals: 'hello nil'.
+!
+
+testAtIfPresentIfAbsent
+	| testObject |
+	testObject := self jsObject.
+	self assert: (testObject at: 'abc' ifPresent: [:x|'hello ',x asString] ifAbsent: ['not present']) equals: 'not present'.
+	self assert: (testObject at: 'e' ifPresent: [:x|'hello ',x asString] ifAbsent: ['not present']) equals: 'hello nil'.
+	self assert: (testObject at: 'a' ifPresent: [:x|'hello ',x asString] ifAbsent: ['not present']) equals: 'hello 1'.
+	self assert: (testObject at: 'f' ifPresent: [:x|'hello ',x asString] ifAbsent: ['not present']) equals: 'hello nil'.
 !
 
 testDNU
@@ -1582,6 +1509,167 @@ testUnicity
 	self assert: set size equals: 2.
 
 	self assert: set asArray equals: #(21 'hello')
+! !
+
+TestCase subclass: #StreamTest
+	instanceVariableNames: ''
+	package: 'Kernel-Tests'!
+
+!StreamTest methodsFor: 'accessing'!
+
+collectionClass
+	^ self class collectionClass
+!
+
+newCollection
+	^ self collectionClass new
+!
+
+newStream
+	^ self collectionClass new stream
+! !
+
+!StreamTest methodsFor: 'tests'!
+
+testAtStartAtEnd
+	| stream |
+	
+	stream := self newStream.
+	self assert: stream atStart.
+	self assert: stream atEnd.
+	
+	stream nextPutAll: self newCollection.
+	self assert: stream atEnd.
+	self deny: stream atStart.
+	
+	stream position: 1.
+	self deny: stream atEnd.
+	self deny: stream atStart
+!
+
+testContents
+	| stream |
+	
+	stream := self newStream.
+	stream nextPutAll: self newCollection.
+	
+	self assert: stream contents equals: self newCollection
+!
+
+testIsEmpty
+	| stream |
+	
+	stream := self newStream.
+	self assert: stream isEmpty.
+	
+	stream nextPutAll: self newCollection.
+	self deny: stream isEmpty
+!
+
+testPosition
+	| collection stream |
+	
+	collection := self newCollection.
+	stream := self newStream.
+	
+	stream nextPutAll: collection.
+	self assert: stream position equals: collection size.
+	
+	stream position: 0.
+	self assert: stream position equals: 0.
+	
+	stream next.
+	self assert: stream position equals: 1.
+	
+	stream next.
+	self assert: stream position equals: 2
+!
+
+testReading
+	| stream collection |
+	
+	collection := self newCollection.
+	stream := self newStream.
+	
+	stream 
+		nextPutAll: collection;
+		position: 0.
+	
+	collection do: [ :each |
+		self assert: stream next equals: each ].
+		
+	self assert: stream next isNil
+!
+
+testStreamContents
+!
+
+testWrite
+	| stream collection |
+	
+	collection := self newCollection.
+	stream := self newStream.
+	
+	collection do: [ :each | stream << each ].
+	self assert: stream contents equals: collection
+!
+
+testWriting
+	| stream collection |
+	
+	collection := self newCollection.
+	stream := self newStream.
+	
+	collection do: [ :each | stream nextPut: each ].
+	self assert: stream contents equals: collection.
+	
+	stream := self newStream.
+	stream nextPutAll: collection.
+	self assert: stream contents equals: collection
+! !
+
+!StreamTest class methodsFor: 'accessing'!
+
+collectionClass
+	^ nil
+! !
+
+!StreamTest class methodsFor: 'testing'!
+
+isAbstract
+	^ self collectionClass isNil
+! !
+
+StreamTest subclass: #ArrayStreamTest
+	instanceVariableNames: ''
+	package: 'Kernel-Tests'!
+
+!ArrayStreamTest methodsFor: 'accessing'!
+
+newCollection
+	^ { true. 1. 3@4. 'foo' }
+! !
+
+!ArrayStreamTest class methodsFor: 'accessing'!
+
+collectionClass
+	^ Array
+! !
+
+StreamTest subclass: #StringStreamTest
+	instanceVariableNames: ''
+	package: 'Kernel-Tests'!
+
+!StringStreamTest methodsFor: 'accessing'!
+
+newCollection
+	^ 'hello world'
+! !
+
+!StringStreamTest class methodsFor: 'accessing'!
+
+collectionClass
+	^ String
 ! !
 
 TestCase subclass: #UndefinedTest

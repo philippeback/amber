@@ -67,12 +67,12 @@ identityHash
 	>
 !
 
-instVarAt: aSymbol
-	<return self['@'+aSymbol._asString()]>
+instVarAt: aString
+	< return self['@'+aString] >
 !
 
-instVarAt: aSymbol put: anObject
-	<self['@' + aSymbol._asString()] = anObject>
+instVarAt: aString put: anObject
+	< self['@' + aString] = anObject >
 !
 
 size
@@ -217,48 +217,43 @@ initialize
 
 !Object methodsFor: 'message handling'!
 
-basicPerform: aSymbol
-	^self basicPerform: aSymbol withArguments: #()
+basicPerform: aString
+	^self basicPerform: aString withArguments: #()
 !
 
-basicPerform: aSymbol withArguments: aCollection
-	<return self[aSymbol].apply(self, aCollection);>
+basicPerform: aString withArguments: aCollection
+	<return self[aString].apply(self, aCollection);>
 !
 
-perform: aSymbol
-	^self perform: aSymbol withArguments: #()
+perform: aString
+	^self perform: aString withArguments: #()
 !
 
-perform: aSymbol withArguments: aCollection
-	<return smalltalk.send(self, aSymbol._asSelector(), aCollection)>
+perform: aString withArguments: aCollection
+	<return smalltalk.send(self, aString._asSelector(), aCollection)>
 ! !
 
 !Object methodsFor: 'printing'!
 
-log: aString block: aBlock
-
-	| result |
-	console log: aString, ' time: ', (Date millisecondsToRun: [result := aBlock value]) printString.
-	^result
-!
-
-printNl
-	<console.log(self)>
+printOn: aStream
+	"Append to the aStream, a string representing the receiver."
+	
+	aStream nextPutAll: (self class name first isVowel
+		ifTrue: [ 'an ' ]
+		ifFalse: [ 'a ' ]).
+	aStream nextPutAll: self class name
 !
 
 printString
-	^'a ', self class name
-!
+	"Answer a String representation of the receiver."
 
-storeOn: aStream
-	aStream nextPutAll: self printString
-!
+	^ String streamContents: [ :stream | self printOn: stream ]
+! !
 
-storeString
-	"Answer a String representation of the receiver from which the receiver
-	can be reconstructed."
+!Object methodsFor: 'streaming'!
 
-	^ String streamContents: [:s | self storeOn: s]
+putOn: aStream
+	aStream nextPut: self
 ! !
 
 !Object methodsFor: 'testing'!
@@ -289,6 +284,10 @@ isBoolean
 
 isClass
 	^false
+!
+
+isImmutable
+	^ false
 !
 
 isKindOf: aClass
@@ -431,6 +430,10 @@ or: aBlock
 
 asJSON
 	^self
+!
+
+asString
+	< return self.toString() >
 ! !
 
 !Boolean methodsFor: 'copying'!
@@ -445,13 +448,17 @@ shallowCopy
 
 !Boolean methodsFor: 'printing'!
 
-printString
-	<return self.toString()>
+printOn: aStream
+	aStream nextPutAll: self asString
 ! !
 
 !Boolean methodsFor: 'testing'!
 
 isBoolean
+	^ true
+!
+
+isImmutable
 	^ true
 ! !
 
@@ -602,8 +609,8 @@ asTimeString
 
 !Date methodsFor: 'printing'!
 
-printString
-	^self asString
+printOn: aStream
+	aStream nextPutAll: self asString
 ! !
 
 !Date class methodsFor: 'instance creation'!
@@ -668,21 +675,37 @@ __Note:__ For keyword-based messages, only the first keyword is kept: `window fo
 
 !JSObjectProxy methodsFor: 'accessing'!
 
-at: aSymbol
-	<return self['@jsObject'][aSymbol._asString()]>
+at: aString
+	<return self['@jsObject'][aString]>
 !
 
-at: aSymbol ifAbsent: aBlock
-	"return the aSymbol property or evaluate aBlock if the property is not defined on the object"
+at: aString ifAbsent: aBlock
+	"return the aString property or evaluate aBlock if the property is not defined on the object"
 	<
-		var obj = self['@jsObject'],
-			symbol = aSymbol._asString();
-		return symbol in obj ? obj[symbol] : aBlock();
+		var obj = self['@jsObject'];
+		return aString in obj ? obj[aString] : aBlock();
 	>
 !
 
-at: aSymbol put: anObject
-	<self['@jsObject'][aSymbol._asString()] = anObject>
+at: aString ifPresent: aBlock
+	"return the evaluation of aBlock with the value if the property is defined or return nil"
+	<
+		var obj = self['@jsObject'];
+		return aString in obj ? aBlock(obj[aString]) : nil;
+	>
+!
+
+at: aString ifPresent: aBlock ifAbsent: anotherBlock
+	"return the evaluation of aBlock with the value if the property is defined
+	or return value of anotherBlock"
+	<
+		var obj = self['@jsObject'];
+		return aString in obj ? aBlock(obj[aString]) : anotherBlock();
+	>
+!
+
+at: aString put: anObject
+	<self['@jsObject'][aString] = anObject>
 !
 
 jsObject
@@ -696,7 +719,10 @@ jsObject: aJSObject
 value
 	"if attribute 'value' exists on the JS object return it,
 	otherwise return the result of Object>>value."
-	^ self at: 'value' ifAbsent: [super value]
+	
+	^ self 
+		at: 'value' 
+		ifAbsent: [ super value ]
 ! !
 
 !JSObjectProxy methodsFor: 'enumerating'!
@@ -708,6 +734,12 @@ keysAndValuesDo: aBlock
 			aBlock(i, o[i]);
 		}
 	>
+! !
+
+!JSObjectProxy methodsFor: 'printing'!
+
+printOn: aStream
+	aStream nextPutAll: self jsObject toString
 ! !
 
 !JSObjectProxy methodsFor: 'proxy'!
@@ -740,10 +772,6 @@ inspectOn: anInspector
 	anInspector setLabel: self printString.
 	self addObjectVariablesTo: variables.
 	anInspector setVariables: variables
-!
-
-printString
-	^self jsObject toString
 ! !
 
 !JSObjectProxy methodsFor: 'testing'!
@@ -899,7 +927,7 @@ asPoint
 !
 
 asString
-	^self printString
+	< return String(self) >
 !
 
 atRandom
@@ -1000,15 +1028,19 @@ to: stop do: aBlock
 
 !Number methodsFor: 'printing'!
 
-printShowingDecimalPlaces: placesDesired
-	<return self.toFixed(placesDesired)>
+printOn: aStream
+	aStream nextPutAll: self asString
 !
 
-printString
-	<return String(self)>
+printShowingDecimalPlaces: placesDesired
+	<return self.toFixed(placesDesired)>
 ! !
 
 !Number methodsFor: 'testing'!
+
+IsImmutable
+	^ true
+!
 
 even
 	^ 0 = (self \\ 2)
@@ -1179,8 +1211,12 @@ sortedClasses
 
 !Package methodsFor: 'printing'!
 
-printString
-	^self name
+printOn: aStream
+	super printOn: aStream.
+	aStream 
+		nextPutAll: ' (';
+		nextPutAll: self name;
+		nextPutAll: ')'
 ! !
 
 !Package methodsFor: 'private'!
@@ -1373,16 +1409,17 @@ asPoint
 
 !Point methodsFor: 'printing'!
 
-printString
+printOn: aStream
 	"Print receiver in classic x@y notation."
 
-	^String streamContents: [:stream |
-		stream nextPutAll: x printString, '@'.
-		(y notNil and: [y negative])
-			ifTrue: [
-				"Avoid ambiguous @- construct"
-				stream space].
-		stream nextPutAll: y printString]
+	x printOn: aStream.
+	
+	aStream nextPutAll: '@'.
+	(y notNil and: [y negative]) ifTrue: [
+			"Avoid ambiguous @- construct"
+			aStream space ].
+	
+	y printOn: aStream
 ! !
 
 !Point methodsFor: 'transforming'!
@@ -1473,8 +1510,8 @@ It requires the `Compiler` package and the `js/parser.js` parser file in order t
 
 !Smalltalk methodsFor: 'accessing'!
 
-at: aSymbol
-	<return self[aSymbol._asString()]>
+at: aString
+	<return self[aString]>
 !
 
 parse: aString
@@ -1699,8 +1736,8 @@ shallowCopy
 
 !UndefinedObject methodsFor: 'printing'!
 
-printString
-	^'nil'
+printOn: aStream
+	aStream nextPutAll: 'nil'
 ! !
 
 !UndefinedObject methodsFor: 'testing'!
@@ -1723,6 +1760,10 @@ ifNotNil: aBlock
 ifNotNil: aBlock ifNil: anotherBlock
 	"inlined in the Compiler"
 	^anotherBlock value
+!
+
+isImmutable
+	^ true
 !
 
 isNil

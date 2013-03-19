@@ -90,8 +90,8 @@ lookupSelector: selector
 	^ nil
 !
 
-methodAt: aSymbol
-	^ self methodDictionary at: aSymbol asString
+methodAt: aString
+	^ self methodDictionary at: aString
 !
 
 methodDictionary
@@ -261,8 +261,8 @@ canUnderstand: aSelector
 		self superclass notNil and: [self superclass canUnderstand: aSelector]]
 !
 
-includesSelector: aSymbol
-	^ self methodDictionary includesKey: aSymbol asString
+includesSelector: aString
+	^ self methodDictionary includesKey: aString
 !
 
 inheritsFrom: aClass
@@ -345,8 +345,8 @@ asJavascript
 
 !Class methodsFor: 'printing'!
 
-printString
-	^self name
+printOn: aStream
+	aStream nextPutAll: self name
 ! !
 
 !Class methodsFor: 'testing'!
@@ -370,8 +370,7 @@ definition
 	^ String streamContents: [ :stream |
 		stream
 			nextPutAll: self asString;
-			nextPutAll: ' class ';
-			nextPutAll: 'instanceVariableNames: '''.
+			nextPutAll: ' instanceVariableNames: '''.
 		self instanceVariableNames
 			do: [ :each | stream nextPutAll: each ]
 			separatedBy: [ stream nextPutAll: ' ' ].
@@ -403,8 +402,10 @@ asJavascript
 
 !Metaclass methodsFor: 'printing'!
 
-printString
-	^self instanceClass name, ' class'
+printOn: aStream
+	aStream
+		nextPutAll: self instanceClass name;
+		nextPutAll: ' class'
 ! !
 
 !Metaclass methodsFor: 'testing'!

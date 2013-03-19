@@ -334,7 +334,7 @@ initialize
 !
 
 setupCodeMirror
-	< CodeMirror.keyMap.default.fallthrough = ["basic"] >
+	< CodeMirror.keyMap["default"].fallthrough = ["basic"] >
 ! !
 
 Widget subclass: #TabManager
